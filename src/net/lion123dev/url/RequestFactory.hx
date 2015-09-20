@@ -1,5 +1,6 @@
 package src.net.lion123dev.url;
 import haxe.crypto.Base64;
+import haxe.crypto.BaseCode;
 import haxe.crypto.Hmac;
 import haxe.Http;
 import haxe.io.Bytes;
@@ -11,8 +12,8 @@ import haxe.zip.Compress;
  */
 typedef InitRequest = {
 	var platform:String;
-	var osVersion:String;
-	var sdkVersion:String;
+	var os_version:String;
+	var sdk_version:String;
 }
 typedef InitResponse = {
 	var enabled:Bool;
@@ -37,21 +38,22 @@ class RequestFactory
 	 * Get a new Http request object with headers and body, ready to be posted.
 	 * @param	url full url to the endpoint, including protocol (http://).
 	 * @param	data data to include in the post.
-	 * @return Request
+	 * @return Http Request, call .request(
 	 */
 	public function MakeRequest(url:String, data:String):Http
 	{
+		trace("data: " + data);
 		var request:Http = new Http(url);
 		var postData:String = data;
 		request.addHeader("Content-Type", "application/json");
 		if (_gzip)
 		{
 			//TODO: Not implemented yet
-			request.addHeader("Content-Encoding", "gzip");
-			postData = "";
+			//request.addHeader("Content-Encoding", "gzip");
+			//postData = "";
 		}
 		var cryptoString:String = Base64.encode(_hmac.make(Bytes.ofString(_secretKey), Bytes.ofString(data)));
-		request.addHeader("Authentication", cryptoString);
+		request.addHeader("Authorization", cryptoString);
 		request.setPostData(postData);
 		return request;
 	}
@@ -61,5 +63,4 @@ class RequestFactory
 		_gzip = value;
 		return _gzip;
 	}
-	
 }

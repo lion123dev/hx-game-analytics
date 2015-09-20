@@ -3,6 +3,8 @@ import haxe.crypto.Hmac;
 import haxe.Http;
 import haxe.Json;
 import haxe.Timer;
+import net.lion123dev.data.DataStorageManager;
+import net.lion123dev.events.Events.BaseEvent;
 import src.net.lion123dev.url.RequestFactory;
 import src.net.lion123dev.url.URLFactory;
 
@@ -13,7 +15,9 @@ import src.net.lion123dev.url.URLFactory;
 class GameAnalytics
 {
 	public static inline var DEFAULT_TIMER:Int = 20000;
+	static inline var VERSION_NUMBER:Int = 2;
 	static inline var VERSION:String = "v2";
+	static inline var SDK_VERSION:String = "rest api v2";
 	static inline var PROTOCOL:String = "http://";
 	
 	static inline var PRODUCTION:String = "api.gameanalytics.com";
@@ -29,16 +33,20 @@ class GameAnalytics
 	var _inited:Bool;
 	var _running:Bool;
 	
+	var _defaultValues:BaseEvent;
+	
+	var _storage:DataStorageManager;
 	var _urlFactory:URLFactory;
 	var _requestFactory:RequestFactory;
 	var _callbackSuccess:Void->Void;
 	var _callbackFail:String->Void;
 	var _timer:Timer;
+	var _timeOffset:Float;
+	public var defaultValues(get, null):BaseEvent;
 	public var sandboxMode(get, set):Bool;
 	public var gzip(get, set):Bool;
 	public var inited(get, null):Bool;
-	//TODO: use this timestamp
-	public var timestamp:Int;
+	public var serverTimestamp(get, null):Float;
 	
 	/**
 	 * Create a new Game Analytics object. Only one should be created for each pair of game/secret keys.
@@ -54,8 +62,9 @@ class GameAnalytics
 		_gzip = false;
 		_sandboxMode = isSandboxMode;
 		
-		_urlFactory = new URLFactory(PROTOCOL, VERSION, _sandboxMode?SANDBOX:PRODUCTION, _gameKey);
+		_urlFactory = new URLFactory(PROTOCOL, _sandboxMode?SANDBOX:PRODUCTION, VERSION, _gameKey);
 		_requestFactory = new RequestFactory(_gzip, _secretKey);
+		_storage = new DataStorageManager();
 	}
 	
 	/**
@@ -65,20 +74,39 @@ class GameAnalytics
 	 * @param	onSuccess Function to be called when the init request succeds.
 	 * @param	onFail Function to be called if the request fails or the server responses with enabled:false.
 	 */
-	public function Init(platform:String, osVersion:String, onSuccess:Void->Void=null, onFail:String->Void=null):Void
+	public function Init(onSuccess:Void->Void, onFail:String->Void, platform:String, osVersion:String, device:String, manufacturer:String):Void
 	{
+		if (!_inited)
+		{
+			_storage.Init();
+		}
+		
+		_defaultValues = {
+			device: device,
+			v: VERSION_NUMBER,
+			user_id: _storage.userId,
+			sdk_version: SDK_VERSION,
+			os_version: osVersion,
+			manufacturer: manufacturer,
+			platform: platform,
+			session_id: _storage.sessionId,
+			session_num: _storage.sessionNum,
+			client_ts: 0
+		};
 		if (_inited)
 		{
-			trace("Game Analytics already inited.");
+			trace("Game Analytics already inited, not sending init request");
 			return;
 		}
 		_callbackSuccess = onSuccess;
 		_callbackFail = onFail;
-		var initRequest:InitRequest = { platform: platform, osVersion: osVersion, sdkVersion: "rest api v2" };
+		var initRequest:InitRequest = { platform: platform, os_version: osVersion, sdk_version: SDK_VERSION };
+		trace(_urlFactory.BuildUrl(ACTION_INIT));
 		var request:Http = _requestFactory.MakeRequest(_urlFactory.BuildUrl(ACTION_INIT), Json.stringify(initRequest));
 		request.onError = onInitFail;
 		request.onData = onInitSuccess;
 		request.request(true);
+		_inited = true;
 	}
 	
 	/**
@@ -102,7 +130,7 @@ class GameAnalytics
 			StopPosting();
 		}
 		_timer = new Timer(interval);
-		_timer.run = onPostEvents;
+		_timer.run = doPostEvents;
 		_running = true;
 	}
 	
@@ -126,10 +154,10 @@ class GameAnalytics
 	 */
 	public function ForcePost():Void
 	{
-		onPostEvents();
+		doPostEvents();
 	}
 	
-	function onPostEvents():Void
+	function doPostEvents():Void
 	{
 		
 	}
@@ -145,8 +173,9 @@ class GameAnalytics
 				_callbackFail(error);
 			return;
 		}
-		timestamp = initResponse.server_ts;
+		_timeOffset = initResponse.server_ts - Date.now().getTime();
 		_callbackSuccess();
+		_inited = true;
 	}
 	function onInitFail(msg:String):Void
 	{
@@ -158,6 +187,16 @@ class GameAnalytics
 	
 	
 	/* Properties accessors */
+	
+	public function get_serverTimestamp():Float
+	{
+		return Date.now().getTime() + _timeOffset;
+	}
+	
+	public function get_defaultValues():BaseEvent
+	{
+		return _defaultValues;
+	}
 	
 	public function get_sandboxMode():Bool
 	{
