@@ -8,30 +8,77 @@ class DataStorageManager
 {
 	var _userId:String;
 	var _sessionId:String;
-	var _sessionNum:UInt;
+	var _sessionNum:Int;
+	var _transactionNum:Int;
+	var _db:DBlite;
 	public var userId(get, null):String;
 	public var sessionId(get, null):String;
-	public var sessionNum(get, null):UInt;
+	public var sessionNum(get, null):Int;
+	public var transactionNum(get, null):Int;
 	
-	public function new() { }
+	public function new()
+	{
+		_db = new DBlite();
+	}
 	
 	public function Init():Void
 	{
-		//increment/ session_num
-		//init user_id 
+		if (_db.IsInitialized())
+		{
+			//load data
+			_sessionNum = Std.parseInt(_db.LoadKeyValue(DBlite.SESSION_NUM));
+			_transactionNum = Std.parseInt(_db.LoadKeyValue(DBlite.TRANSACTION_NUM));
+			_userId = _db.LoadKeyValue(DBlite.USER_ID);
+		}else {
+			//new data
+			_db.InitNew();
+			_sessionNum = 0;
+			_transactionNum = 0;
+			_userId = UID(12);
+			SaveAll();
+		}
 	}
 	
-	function newData():Void
+	public function NewSession():Void
 	{
-		//session_num=1, save session_num
-		//session_id=rnd
-		//user_id=rnd, save user_id
+		_sessionNum++;
+		_sessionId = UID(8) + "-" + UID(4) + "-" + UID(4) + "-" + UID(4) + "-" + UID(12);
+		_db.UpdateKeyValue(DBlite.SESSION_NUM, Std.string(_sessionNum));
 	}
-	function loadData():Void
+	
+	public function NewTransaction():Void
 	{
-		//session_num++, save session_num
-		//session_id=rnd
-		//user_id not changed
+		_transactionNum++;
+		_db.UpdateKeyValue(DBlite.TRANSACTION_NUM, Std.string(_transactionNum));
+	}
+	
+	public function NewAttempt(id:String):Int
+	{
+		var num:Int = _db.GetAttemptNum(id)+1;
+		_db.UpdateAttemptNum(id, num);
+		return num;
+	}
+	
+	public function SendEvent(event:String):Void
+	{
+		_db.PushEvent(event);
+	}
+	
+	function SaveAll():Void
+	{
+		_db.UpdateKeyValue(DBlite.USER_ID, _userId);
+		_db.UpdateKeyValue(DBlite.SESSION_NUM, Std.string(_sessionNum));
+		_db.UpdateKeyValue(DBlite.TRANSACTION_NUM, Std.string(_transactionNum));
+	}
+	
+	public function UID(length:Int):String
+	{
+		var uid:StringBuf = new StringBuf();
+		for (i in 0...length)
+		{
+			uid.add(StringTools.hex(Math.floor(Math.random() * 16)));
+		}
+		return uid.toString();
 	}
 	
 	/* Properties accessors */
@@ -46,8 +93,13 @@ class DataStorageManager
 		return _sessionId;
 	}
 	
-	public function get_sessionNum():UInt
+	public function get_sessionNum():Int
 	{
 		return _sessionNum;
+	}
+	
+	public function get_transactionNum():Int
+	{
+		return _transactionNum;
 	}
 }

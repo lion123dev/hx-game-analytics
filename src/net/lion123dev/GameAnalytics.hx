@@ -4,6 +4,7 @@ import haxe.Http;
 import haxe.Json;
 import haxe.Timer;
 import net.lion123dev.data.DataStorageManager;
+import net.lion123dev.events.Events;
 import net.lion123dev.events.Events.BaseEvent;
 import src.net.lion123dev.url.RequestFactory;
 import src.net.lion123dev.url.URLFactory;
@@ -32,6 +33,8 @@ class GameAnalytics
 	var _gzip:Bool;
 	var _inited:Bool;
 	var _running:Bool;
+	var _sessionPresent:Bool = false;
+	var _sessionStartTime:Float;
 	
 	var _defaultValues:BaseEvent;
 	
@@ -106,7 +109,6 @@ class GameAnalytics
 		request.onError = onInitFail;
 		request.onData = onInitSuccess;
 		request.request(true);
-		_inited = true;
 	}
 	
 	/**
@@ -157,9 +159,33 @@ class GameAnalytics
 		doPostEvents();
 	}
 	
+	public function NewSession():Void
+	{
+		if (_sessionPresent)
+		{
+			EndSession();
+		}
+		_sessionPresent = true;
+		_sessionStartTime = Date.now().getTime();
+		_storage.NewSession();
+		_defaultValues.session_id = _storage.sessionId;
+		SendSessionStartEvent();
+	}
+	
+	public function EndSession():Void
+	{
+		if (!_sessionPresent)
+		{
+			trace("No current session availbale");
+			return;
+		}
+		SendSessionEndEvent(Math.ceil((_sessionStartTime-Date.now().getTime()) / 1000));
+		_sessionPresent = false;
+	}
+	
 	function doPostEvents():Void
 	{
-		
+		//
 	}
 	
 	function onInitSuccess(data:String):Void
@@ -176,6 +202,7 @@ class GameAnalytics
 		_timeOffset = initResponse.server_ts - Date.now().getTime();
 		_callbackSuccess();
 		_inited = true;
+		NewSession();
 	}
 	function onInitFail(msg:String):Void
 	{
@@ -185,7 +212,88 @@ class GameAnalytics
 			_callbackFail(error);
 	}
 	
-	
+	//Events creating/sending. SendDesignEvent is an alias for SendEvent(CreateDesignEvent(..params))
+	function CreateSessionStartEvent():BaseEvent
+	{
+		return Events.GetUserEvent(_defaultValues);
+	}
+	function CreateSessionEndEvent(length:Int):SessionEndEvent
+	{
+		return Events.GetSessionEndEvent(_defaultValues, length);
+	}
+	public function CreateBusinessEvent(itemType:String, itemId:String, amount:Int, currency:String):BusinessEvent
+	{
+		_storage.NewTransaction();
+		return Events.GetBusinessEvent(_defaultValues, itemType+":" + itemId, amount, currency, _storage.transactionNum);
+	}
+	public function CreateResourceEvent(flowType:String, virtualCurrency:String, itemType:String, itemId:String, amount:Float):ResourceEvent
+	{
+		return Events.GetResourceEvent(_defaultValues, [flowType, virtualCurrency, itemType, itemId].join(":"), amount);
+	}
+	public function CreateProgressionEvent(progressionStatus:String, progression1:String, progression2:String, progression3:String):ProgressionEvent
+	{
+		var event_id:String = progression1;
+		if (progression2 != null) event_id += (":" + progression2);
+		if (progression3 != null) event_id += (":" + progression3);
+		var event:ProgressionEvent = Events.GetProgressionEvent(_defaultValues, progressionStatus + ":" + event_id);
+		if (progressionStatus == ProgressionStatus.COMPLETE || progressionStatus == ProgressionStatus.FAIL)
+		{
+			event.attempt_num = _storage.NewAttempt(event_id);
+		}
+		return event;
+	}
+	public function CreateDesignEvent(part1:String, part2:String=null, part3:String=null, part4:String=null, part5:String=null, value:Null<Float> = null):DesignEvent
+	{
+		var event_id:String = part1;
+		for (s in [part2, part3, part4, part5])
+		{
+			if (s != null) event_id += s;
+		}
+		var event:DesignEvent = Events.GetDesignEvent(_defaultValues, event_id);
+		if (value != null) event.value = value;
+		return event;
+	}
+	public function CreateErrorEvent(severity:String, message:String):ErrorEvent
+	{
+		return Events.GetErrorEvent(_defaultValues, severity, message);
+	}
+	function SendSessionStartEvent():Void
+	{
+		SendEvent(CreateSessionStartEvent());
+	}
+	function SendSessionEndEvent(length:Int):Void
+	{
+		SendEvent(CreateSessionEndEvent(length));
+	}
+	public function SendBusinessEvent(itemType:String, itemId:String, amount:Int, currency:String):Void
+	{
+		SendEvent(CreateBusinessEvent(itemType, itemId, amount, currency));
+	}
+	public function SendResourceEvent(flowType:String, virtualCurrency:String, itemType:String, itemId:String, amount:Float):Void
+	{
+		SendEvent(CreateResourceEvent(flowType, virtualCurrency, itemType, itemId, amount));
+	}
+	public function SendProgressionEvent(progressionStatus:String, progression1:String, progression2:String, progression3:String):Void
+	{
+		SendEvent(CreateProgressionEvent(progressionStatus, progression1, progression2, progression3));
+	}
+	public function SendDesignEvent(part1:String, part2:String = null, part3:String = null, part4:String = null, part5:String = null, value:Null<Float> = null):Void
+	{
+		SendEvent(CreateDesignEvent(part1, part2, part3, part4, part5, value));
+	}
+	public function SendErrorEvent(severity:String, message:String):Void
+	{
+		SendEvent(CreateErrorEvent(severity, message));
+	}
+	public function SendEvent(event:Dynamic):Void
+	{
+		if (!_sessionPresent)
+		{
+			trace("No session available");
+			return;
+		}
+		_storage.SendEvent(Json.stringify(event));
+	}
 	/* Properties accessors */
 	
 	public function get_serverTimestamp():Float

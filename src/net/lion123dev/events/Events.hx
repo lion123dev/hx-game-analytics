@@ -156,3 +156,14 @@ class ErrorSeverity
 	public static inline var ERROR:String = "error";
 	public static inline var CRITICAL:String = "critical";
 }
+class FlowType
+{
+	public static inline var SINK:String = "Sink";
+	public static inline var SOURCE:String = "Source";
+}
+class ProgressionStatus
+{
+	public static inline var START:String = "Start";
+	public static inline var FAIL:String = "Fail";
+	public static inline var COMPLETE:String = "Complete";
+}
