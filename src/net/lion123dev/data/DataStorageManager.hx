@@ -1,4 +1,7 @@
 package net.lion123dev.data;
+import net.lion123dev.data.db.DBadapter;
+import net.lion123dev.data.db.DefaultAdapter;
+import net.lion123dev.data.db.SharedObjectAdapter;
 
 /**
  * ...
@@ -10,7 +13,7 @@ class DataStorageManager
 	var _sessionId:String;
 	var _sessionNum:Int;
 	var _transactionNum:Int;
-	var _db:DBlite;
+	var _db:DBadapter;
 	public var userId(get, null):String;
 	public var sessionId(get, null):String;
 	public var sessionNum(get, null):Int;
@@ -18,20 +21,25 @@ class DataStorageManager
 	
 	public function new()
 	{
-		_db = new DBlite();
+		#if flash
+		_db = new SharedObjectAdapter();
+		#else
+		_db = new DefaultAdapter();
+		#end
 	}
 	
-	public function Init():Void
+	public function Init(uniqueKey:String):Void
 	{
 		if (_db.IsInitialized())
 		{
 			//load data
-			_sessionNum = Std.parseInt(_db.LoadKeyValue(DBlite.SESSION_NUM));
-			_transactionNum = Std.parseInt(_db.LoadKeyValue(DBlite.TRANSACTION_NUM));
-			_userId = _db.LoadKeyValue(DBlite.USER_ID);
+			_db.Load(uniqueKey);
+			_sessionNum = Std.parseInt(_db.LoadKeyValue(DBadapter.SESSION_NUM));
+			_transactionNum = Std.parseInt(_db.LoadKeyValue(DBadapter.TRANSACTION_NUM));
+			_userId = _db.LoadKeyValue(DBadapter.USER_ID);
 		}else {
 			//new data
-			_db.InitNew();
+			_db.InitNew(uniqueKey);
 			_sessionNum = 0;
 			_transactionNum = 0;
 			_userId = UID(12);
@@ -43,13 +51,13 @@ class DataStorageManager
 	{
 		_sessionNum++;
 		_sessionId = UID(8) + "-" + UID(4) + "-" + UID(4) + "-" + UID(4) + "-" + UID(12);
-		_db.UpdateKeyValue(DBlite.SESSION_NUM, Std.string(_sessionNum));
+		_db.UpdateKeyValue(DBadapter.SESSION_NUM, Std.string(_sessionNum));
 	}
 	
 	public function NewTransaction():Void
 	{
 		_transactionNum++;
-		_db.UpdateKeyValue(DBlite.TRANSACTION_NUM, Std.string(_transactionNum));
+		_db.UpdateKeyValue(DBadapter.TRANSACTION_NUM, Std.string(_transactionNum));
 	}
 	
 	public function NewAttempt(id:String):Int
@@ -66,9 +74,9 @@ class DataStorageManager
 	
 	function SaveAll():Void
 	{
-		_db.UpdateKeyValue(DBlite.USER_ID, _userId);
-		_db.UpdateKeyValue(DBlite.SESSION_NUM, Std.string(_sessionNum));
-		_db.UpdateKeyValue(DBlite.TRANSACTION_NUM, Std.string(_transactionNum));
+		_db.UpdateKeyValue(DBadapter.USER_ID, _userId);
+		_db.UpdateKeyValue(DBadapter.SESSION_NUM, Std.string(_sessionNum));
+		_db.UpdateKeyValue(DBadapter.TRANSACTION_NUM, Std.string(_transactionNum));
 	}
 	
 	public function UID(length:Int):String

@@ -81,9 +81,8 @@ class GameAnalytics
 	{
 		if (!_inited)
 		{
-			_storage.Init();
+			_storage.Init("game" + _gameKey);
 		}
-		
 		_defaultValues = {
 			device: device,
 			v: VERSION_NUMBER,

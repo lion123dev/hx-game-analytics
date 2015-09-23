@@ -1,10 +1,10 @@
-package net.lion123dev.data;
+package net.lion123dev.data.db;
 
 /**
  * ...
  * @author _lion123
  */
-class DBlite
+class DBadapter
 {
 
 	public static inline var SESSION_NUM:String = "sessionNum";
@@ -15,7 +15,12 @@ class DBlite
 		
 	}
 	
-	public function InitNew():Void
+	public function InitNew(uniqueKey:String):Void
+	{
+		
+	}
+	
+	public function Load(uniqueKey:String):Void
 	{
 		
 	}
@@ -54,7 +59,6 @@ class DBlite
 	
 	public function RemoveFirstNEvents(n:Int):Void
 	{
-		
 	}
 	
 	//Progression
