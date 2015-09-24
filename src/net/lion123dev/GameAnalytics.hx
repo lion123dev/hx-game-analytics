@@ -67,7 +67,7 @@ class GameAnalytics
 		
 		_urlFactory = new URLFactory(PROTOCOL, _sandboxMode?SANDBOX:PRODUCTION, VERSION, _gameKey);
 		_requestFactory = new RequestFactory(_gzip, _secretKey);
-		_storage = new DataStorageManager();
+		_storage = new DataStorageManager("game" + _gameKey);
 	}
 	
 	/**
@@ -81,7 +81,7 @@ class GameAnalytics
 	{
 		if (!_inited)
 		{
-			_storage.Init("game" + _gameKey);
+			_storage.Init();
 		}
 		_defaultValues = {
 			device: device,

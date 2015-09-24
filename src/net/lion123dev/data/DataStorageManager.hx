@@ -14,32 +14,34 @@ class DataStorageManager
 	var _sessionNum:Int;
 	var _transactionNum:Int;
 	var _db:DBadapter;
+	var _uniqueKey:String;
 	public var userId(get, null):String;
 	public var sessionId(get, null):String;
 	public var sessionNum(get, null):Int;
 	public var transactionNum(get, null):Int;
 	
-	public function new()
+	public function new(uniqueKey:String)
 	{
+		_uniqueKey = uniqueKey;
 		#if flash
-		_db = new SharedObjectAdapter();
+		_db = new SharedObjectAdapter(_uniqueKey);
 		#else
 		_db = new DefaultAdapter();
 		#end
 	}
 	
-	public function Init(uniqueKey:String):Void
+	public function Init():Void
 	{
 		if (_db.IsInitialized())
 		{
 			//load data
-			_db.Load(uniqueKey);
+			_db.Load(_uniqueKey);
 			_sessionNum = Std.parseInt(_db.LoadKeyValue(DBadapter.SESSION_NUM));
 			_transactionNum = Std.parseInt(_db.LoadKeyValue(DBadapter.TRANSACTION_NUM));
 			_userId = _db.LoadKeyValue(DBadapter.USER_ID);
 		}else {
 			//new data
-			_db.InitNew(uniqueKey);
+			_db.InitNew(_uniqueKey);
 			_sessionNum = 0;
 			_transactionNum = 0;
 			_userId = UID(12);
