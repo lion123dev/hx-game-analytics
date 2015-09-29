@@ -1,7 +1,7 @@
 package net.lion123dev.data;
 import net.lion123dev.data.db.DBadapter;
-import net.lion123dev.data.db.DefaultAdapter;
 import net.lion123dev.data.db.SharedObjectAdapter;
+import net.lion123dev.data.db.SQliteAdapter;
 
 /**
  * ...
@@ -19,14 +19,19 @@ class DataStorageManager
 	public var sessionId(get, null):String;
 	public var sessionNum(get, null):Int;
 	public var transactionNum(get, null):Int;
+	public var db(get, null):DBadapter;
 	
 	public function new(uniqueKey:String)
 	{
 		_uniqueKey = uniqueKey;
 		#if flash
 		_db = new SharedObjectAdapter(_uniqueKey);
+		#elseif neko
+		_db = new SQliteAdapter();
+		#elseif cpp
+		_db = new SQliteAdapter();
 		#else
-		_db = new DefaultAdapter();
+		_db = new DBadapter();
 		#end
 	}
 	
@@ -111,5 +116,10 @@ class DataStorageManager
 	public function get_transactionNum():Int
 	{
 		return _transactionNum;
+	}
+	
+	public function get_db():DBadapter
+	{
+		return _db;
 	}
 }
