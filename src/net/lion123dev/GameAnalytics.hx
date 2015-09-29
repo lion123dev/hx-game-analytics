@@ -89,6 +89,7 @@ class GameAnalytics
 		if (!_inited)
 		{
 			_storage.Init();
+			_storage.db.RemoveFirstNEvents(1000);
 		}
 		_defaultValues = {
 			device: device,
@@ -236,7 +237,7 @@ class GameAnalytics
 	{
 		trace("error: " + message);
 		if(_callbackFail != null)
-			_callbackFail(error);
+			_callbackFail(message);
 	}
 	
 	function onEventsRequestStatus(status:Int):Void
@@ -272,23 +273,28 @@ class GameAnalytics
 	//Events creating/sending. SendDesignEvent is an alias for SendEvent(CreateDesignEvent(..params))
 	function CreateSessionStartEvent():BaseEvent
 	{
+		updateClientTimestamp();
 		return Events.GetUserEvent(_defaultValues);
 	}
 	function CreateSessionEndEvent(length:Int):SessionEndEvent
 	{
+		updateClientTimestamp();
 		return Events.GetSessionEndEvent(_defaultValues, length);
 	}
 	public function CreateBusinessEvent(itemType:String, itemId:String, amount:Int, currency:String):BusinessEvent
 	{
+		updateClientTimestamp();
 		_storage.NewTransaction();
 		return Events.GetBusinessEvent(_defaultValues, itemType+":" + itemId, amount, currency, _storage.transactionNum);
 	}
 	public function CreateResourceEvent(flowType:String, virtualCurrency:String, itemType:String, itemId:String, amount:Float):ResourceEvent
 	{
+		updateClientTimestamp();
 		return Events.GetResourceEvent(_defaultValues, [flowType, virtualCurrency, itemType, itemId].join(":"), amount);
 	}
 	public function CreateProgressionEvent(progressionStatus:String, progression1:String, progression2:String, progression3:String):ProgressionEvent
 	{
+		updateClientTimestamp();
 		var event_id:String = progression1;
 		if (progression2 != null) event_id += (":" + progression2);
 		if (progression3 != null) event_id += (":" + progression3);
@@ -301,6 +307,7 @@ class GameAnalytics
 	}
 	public function CreateDesignEvent(part1:String, part2:String=null, part3:String=null, part4:String=null, part5:String=null, value:Null<Float> = null):DesignEvent
 	{
+		updateClientTimestamp();
 		var event_id:String = part1;
 		for (s in [part2, part3, part4, part5])
 		{
@@ -312,6 +319,7 @@ class GameAnalytics
 	}
 	public function CreateErrorEvent(severity:String, message:String):ErrorEvent
 	{
+		updateClientTimestamp();
 		return Events.GetErrorEvent(_defaultValues, severity, message);
 	}
 	function SendSessionStartEvent():Void
@@ -321,6 +329,10 @@ class GameAnalytics
 	function SendSessionEndEvent(length:Int):Void
 	{
 		SendEvent(CreateSessionEndEvent(length));
+	}
+	function updateClientTimestamp():Void
+	{
+		_defaultValues.client_ts = serverTimestamp;
 	}
 	public function SendBusinessEvent(itemType:String, itemId:String, amount:Int, currency:String):Void
 	{
@@ -356,6 +368,7 @@ class GameAnalytics
 		}
 		_storage.SendEvent(Json.stringify(event));
 	}
+	
 	/* Properties accessors */
 	
 	public function get_serverTimestamp():Float
