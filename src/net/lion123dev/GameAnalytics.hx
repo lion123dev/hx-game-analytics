@@ -15,7 +15,11 @@ import src.net.lion123dev.url.URLFactory;
  */
 class GameAnalytics
 {
+	public static inline var MAX_ERRORS:Int = 10;
+	public static inline var EVENTS_THRESHOLD:Int = 50;
+	public static inline var BIG_EVENTS_THRESHOLD:Int = 10000;
 	public static inline var DEFAULT_TIMER:Int = 20000;
+	public static inline var MAX_MESSAGE_LENGTH:Int = 500000;
 	static inline var VERSION_NUMBER:Int = 2;
 	static inline var VERSION:String = "v2";
 	static inline var SDK_VERSION:String = "rest api v2";
@@ -35,6 +39,8 @@ class GameAnalytics
 	var _running:Bool;
 	var _sessionPresent:Bool = false;
 	var _sessionStartTime:Float;
+	var _amountEvents:Int;
+	var _amountErrors:Int;
 	
 	var _defaultValues:BaseEvent;
 	
@@ -59,6 +65,7 @@ class GameAnalytics
 	 */
 	public function new(gameKey:String, secretKey:String, isSandboxMode:Bool) 
 	{
+		_amountErrors = 0;
 		_running = false;
 		_gameKey = gameKey;
 		_secretKey = secretKey;
@@ -182,9 +189,59 @@ class GameAnalytics
 		_sessionPresent = false;
 	}
 	
+	function antiSpam(reason:String):Void
+	{
+		inited = false;
+		trace("Spam detected, reason: " + reason);
+	}
+	
 	function doPostEvents():Void
 	{
-		//
+		var numEvents:Int = _storage.db.GetNumEvents();
+		if (numEvents == 0)
+			return;
+		if (numEvents >= BIG_EVENTS_THRESHOLD)
+		{
+			trace("more than " + BIG_EVENTS_THRESHOLD + " events in queue. Trimming...");
+			_storage.db.RemoveFirstNEvents(numEvents - BIG_EVENTS_THRESHOLD);
+		}
+		_amountEvents = EVENTS_THRESHOLD;
+		var success:Bool = false;
+		var message:String = "";
+		var events:Array<String> = null;
+		while(!success)
+		{
+			events = _storage.db.GetFirstNEvents(_amountEvents);
+			message = "[" + events.join(",") + "]";
+			if (message.length > MAX_MESSAGE_LENGTH)
+			{
+				_amountEvents = Math.floor(_amountEvents / 2);
+			}else{
+				success = true;
+			}
+		}
+		var request:Http = _requestFactory.MakeRequest(_urlFactory.BuildUrl(ACTION_EVENT), message);
+		request.onStatus = onEventsRequestStatus;
+		request.onError = onEventsRequestError;
+		request.onData = onEventsRequestData;
+		request.request(true);
+	}
+	
+	function onEventsRequestData(data:String):Void
+	{
+		trace("data: " + data);
+	}
+	
+	function onEventsRequestError(message:String):Void
+	{
+		trace("error: " + message);
+		if(_callbackFail != null)
+			_callbackFail(error);
+	}
+	
+	function onEventsRequestStatus(status:Int):Void
+	{
+		trace("status: " + status);
 	}
 	
 	function onInitSuccess(data:String):Void
@@ -198,10 +255,11 @@ class GameAnalytics
 				_callbackFail(error);
 			return;
 		}
-		_timeOffset = initResponse.server_ts - Date.now().getTime();
-		_callbackSuccess();
+		_timeOffset = initResponse.server_ts - Math.floor(Date.now().getTime()/1000);
 		_inited = true;
 		NewSession();
+		if(_callbackSuccess != null)
+			_callbackSuccess();
 	}
 	function onInitFail(msg:String):Void
 	{
@@ -291,13 +349,18 @@ class GameAnalytics
 			trace("No session available");
 			return;
 		}
+		if (Reflect.field(event, "category") == Events.ERROR_CATEGORY)
+		{
+			_amountErrors++;
+			if (_amountErrors >= MAX_ERRORS) return;
+		}
 		_storage.SendEvent(Json.stringify(event));
 	}
 	/* Properties accessors */
 	
 	public function get_serverTimestamp():Float
 	{
-		return Date.now().getTime() + _timeOffset;
+		return Math.floor(Date.now().getTime()/1000) + _timeOffset;
 	}
 	
 	public function get_defaultValues():BaseEvent

@@ -73,13 +73,13 @@ typedef ReceiptInfo = {
 class Events
 {
 	static var OPTIONAL_PARAMS:Array<String> = ["limit_ad_tracking", "logon_gamecenter", "logon_googleplay", "jailbroken", "android_id", "googleplus_id", "facebook_id", "gender", "birth_year", "custom_01", "custom_02", "custom_03", "build", "engine_version", "ios_idfv", "connection_type", "progression", "ios_idfa", "google_aid"];
-	static inline var USER_CATEGORY:String = "user";
-	static inline var SESSION_END_CATEGORY:String = "session_end";
-	static inline var BUSINESS_CATEGORY:String = "business";
-	static inline var RESOURCE_CATEGORY:String = "resource";
-	static inline var PROGRESSION_CATEGORY:String = "progression";
-	static inline var DESIGN_CATEGORY:String = "design";
-	static inline var ERROR_CATEGORY:String = "error";
+	public static inline var USER_CATEGORY:String = "user";
+	public static inline var SESSION_END_CATEGORY:String = "session_end";
+	public static inline var BUSINESS_CATEGORY:String = "business";
+	public static inline var RESOURCE_CATEGORY:String = "resource";
+	public static inline var PROGRESSION_CATEGORY:String = "progression";
+	public static inline var DESIGN_CATEGORY:String = "design";
+	public static inline var ERROR_CATEGORY:String = "error";
 	
 	public static function GetUserEvent(base:BaseEvent):BaseEvent
 	{

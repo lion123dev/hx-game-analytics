@@ -38,11 +38,10 @@ class RequestFactory
 	 * Get a new Http request object with headers and body, ready to be posted.
 	 * @param	url full url to the endpoint, including protocol (http://).
 	 * @param	data data to include in the post.
-	 * @return Http Request, call .request(
+	 * @return Http Request, call .request(true) to send request
 	 */
 	public function MakeRequest(url:String, data:String):Http
 	{
-		trace("data: " + data);
 		var request:Http = new Http(url);
 		var postData:String = data;
 		request.addHeader("Content-Type", "application/json");
