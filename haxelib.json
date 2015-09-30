@@ -1,0 +1,10 @@
+{
+	"name": "gameanalytics",
+	"url": "https://github.com/lion123dev/hx-game-analytics",
+	"license": "GPL v2",
+	"tags": ["analytics"],
+	"description": "Haxe SDK for http://www.gameanalytics.com",
+	"version": "0.1.0",
+	"releasenote": "First release, persistent data storage works only on flash targets so far.",
+	"contributors": ["lion123dev"]
+}
