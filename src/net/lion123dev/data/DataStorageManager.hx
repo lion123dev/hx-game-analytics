@@ -19,8 +19,11 @@ class DataStorageManager
 	public var sessionId(get, null):String;
 	public var sessionNum(get, null):Int;
 	public var transactionNum(get, null):Int;
-	public var db(get, null):DBadapter;
 	
+	/**
+	 * Choose an adapter based on current target
+	 * @param	uniqueKey A unique Id for this game, use of gameKey is advised
+	 */
 	public function new(uniqueKey:String)
 	{
 		_uniqueKey = uniqueKey;
@@ -35,6 +38,9 @@ class DataStorageManager
 		#end
 	}
 	
+	/**
+	 * Load data from the database (if it exists), else initialize database with default values
+	 */
 	public function Init():Void
 	{
 		if (_db.IsInitialized())
@@ -54,6 +60,9 @@ class DataStorageManager
 		}
 	}
 	
+	/**
+	 * Increment session number and generate new session id
+	 */
 	public function NewSession():Void
 	{
 		_sessionNum++;
@@ -61,12 +70,20 @@ class DataStorageManager
 		_db.UpdateKeyValue(DBadapter.SESSION_NUM, Std.string(_sessionNum));
 	}
 	
+	/**
+	 * Increment transaction number, get it by accssing transactionNum property
+	 */
 	public function NewTransaction():Void
 	{
 		_transactionNum++;
 		_db.UpdateKeyValue(DBadapter.TRANSACTION_NUM, Std.string(_transactionNum));
 	}
 	
+	/**
+	 * Increment an attempt number for a given event id
+	 * @param	id Id of the event
+	 * @return Incremented number
+	 */
 	public function NewAttempt(id:String):Int
 	{
 		var num:Int = _db.GetAttemptNum(id)+1;
@@ -74,6 +91,10 @@ class DataStorageManager
 		return num;
 	}
 	
+	/**
+	 * Add an event to the database
+	 * @param	event Event to be added
+	 */
 	public function SendEvent(event:String):Void
 	{
 		_db.PushEvent(event);
@@ -86,6 +107,11 @@ class DataStorageManager
 		_db.UpdateKeyValue(DBadapter.TRANSACTION_NUM, Std.string(_transactionNum));
 	}
 	
+	/**
+	 * Get a new hex string of random data
+	 * @param	length length of the string that should be created
+	 * @return Hex string (ex.: a2863eab387b with length=12)
+	 */
 	public function UID(length:Int):String
 	{
 		var uid:StringBuf = new StringBuf();
@@ -94,6 +120,34 @@ class DataStorageManager
 			uid.add(StringTools.hex(Math.floor(Math.random() * 16)));
 		}
 		return uid.toString().toLowerCase();
+	}
+	
+	/**
+	 * Method delegated to the database adapter
+	 * @return
+	 */
+	public function GetNumEvents():Int
+	{
+		return _db.GetNumEvents();
+	}
+	
+	/**
+	 * Method delegated to the database adapter
+	 * @param	n
+	 * @return
+	 */
+	public function GetFirstNEvents(n:Int):Array<String>
+	{
+		return _db.GetFirstNEvents(n);
+	}
+	
+	/**
+	 * Method delegated to the database adapter
+	 * @param	n
+	 */
+	public function RemoveFirstNEvents(n:Int):Void
+	{
+		_db.RemoveFirstNEvents(n);
 	}
 	
 	/* Properties accessors */
@@ -116,10 +170,5 @@ class DataStorageManager
 	public function get_transactionNum():Int
 	{
 		return _transactionNum;
-	}
-	
-	public function get_db():DBadapter
-	{
-		return _db;
 	}
 }

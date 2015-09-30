@@ -90,7 +90,7 @@ class GameAnalytics
 		if (!_inited)
 		{
 			_storage.Init();
-			_storage.db.RemoveFirstNEvents(1000);
+			_storage.RemoveFirstNEvents(1000);
 		}
 		_defaultValues = {
 			device: device,
@@ -198,6 +198,7 @@ class GameAnalytics
 	}
 	
 	function antiSpam(reason:String):Void
+	function antiSpam(reason:String):Void
 	{
 		inited = false;
 		trace("Spam detected, reason: " + reason);
@@ -205,13 +206,13 @@ class GameAnalytics
 	
 	function doPostEvents():Void
 	{
-		var numEvents:Int = _storage.db.GetNumEvents();
+		var numEvents:Int = _storage.GetNumEvents();
 		if (numEvents == 0)
 			return;
 		if (numEvents >= BIG_EVENTS_THRESHOLD)
 		{
-			trace("more than " + BIG_EVENTS_THRESHOLD + " events in queue. Trimming...");
-			_storage.db.RemoveFirstNEvents(numEvents - BIG_EVENTS_THRESHOLD);
+			trace("More than " + BIG_EVENTS_THRESHOLD + " events in queue. Trimming...");
+			_storage.RemoveFirstNEvents(numEvents - BIG_EVENTS_THRESHOLD);
 		}
 		_amountEvents = EVENTS_THRESHOLD;
 		var success:Bool = false;
@@ -219,7 +220,7 @@ class GameAnalytics
 		var events:Array<String> = null;
 		while(!success)
 		{
-			events = _storage.db.GetFirstNEvents(_amountEvents);
+			events = _storage.GetFirstNEvents(_amountEvents);
 			message = "[" + events.join(",") + "]";
 			if (message.length > MAX_MESSAGE_LENGTH)
 			{
@@ -252,7 +253,7 @@ class GameAnalytics
 		_waitingForResponse = false;
 		if (status == 200)
 		{
-			_storage.db.RemoveFirstNEvents(_amountEvents);
+			_storage.RemoveFirstNEvents(_amountEvents);
 		}else {
 			trace("Error status: " + status);
 		}
