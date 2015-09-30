@@ -93,7 +93,7 @@ class DataStorageManager
 		{
 			uid.add(StringTools.hex(Math.floor(Math.random() * 16)));
 		}
-		return uid.toString();
+		return uid.toString().toLowerCase();
 	}
 	
 	/* Properties accessors */

@@ -41,6 +41,7 @@ class GameAnalytics
 	var _sessionStartTime:Float;
 	var _amountEvents:Int;
 	var _amountErrors:Int;
+	var _waitingForResponse:Bool = false;
 	
 	var _defaultValues:BaseEvent;
 	
@@ -81,8 +82,8 @@ class GameAnalytics
 	 * Initialize current Game Analytics object.
 	 * @param	platform A string representing the platform of the SDK, e.g. "ios".
 	 * @param	osVersion A string representing the OS version, e.g. "ios 8.1".
-	 * @param	onSuccess Function to be called when the init request succeds.
-	 * @param	onFail Function to be called if the request fails or the server responses with enabled:false.
+	 * @param	onSuccess Function to be called when requests succeed.
+	 * @param	onFail Function to be called when requests fail, with the reason message.
 	 */
 	public function Init(onSuccess:Void->Void, onFail:String->Void, platform:String, osVersion:String, device:String, manufacturer:String):Void
 	{
@@ -111,16 +112,16 @@ class GameAnalytics
 		_callbackSuccess = onSuccess;
 		_callbackFail = onFail;
 		var initRequest:InitRequest = { platform: platform, os_version: osVersion, sdk_version: SDK_VERSION };
-		trace(_urlFactory.BuildUrl(ACTION_INIT));
 		var request:Http = _requestFactory.MakeRequest(_urlFactory.BuildUrl(ACTION_INIT), Json.stringify(initRequest));
 		request.onError = onInitFail;
 		request.onData = onInitSuccess;
+		_waitingForResponse = true;
 		request.request(true);
 	}
 	
 	/**
 	 * Call this function to start automatically posting events on a given interval.
-	 * @param	interval in millseconds, must be greater than 1000. Default is 20000
+	 * @param	interval in millseconds, must be greater than 1000, default is 20000
 	 */
 	public function StartPosting(interval:Int = DEFAULT_TIMER):Void
 	{
@@ -166,6 +167,9 @@ class GameAnalytics
 		doPostEvents();
 	}
 	
+	/**
+	 * Start a new playing session - a time period of user actively playing the game. Events can not be sent if no session is present. Called automatically on Init.
+	 */
 	public function NewSession():Void
 	{
 		if (_sessionPresent)
@@ -179,6 +183,9 @@ class GameAnalytics
 		SendSessionStartEvent();
 	}
 	
+	/**
+	 * End current session - call this before exitiing the game or if detected that user went afk or paused the game for a long period of time.
+	 */
 	public function EndSession():Void
 	{
 		if (!_sessionPresent)
@@ -225,28 +232,37 @@ class GameAnalytics
 		request.onStatus = onEventsRequestStatus;
 		request.onError = onEventsRequestError;
 		request.onData = onEventsRequestData;
+		_waitingForResponse = true;
 		request.request(true);
 	}
 	
 	function onEventsRequestData(data:String):Void
 	{
-		trace("data: " + data);
 	}
 	
 	function onEventsRequestError(message:String):Void
 	{
-		trace("error: " + message);
+		trace("Error when sending request: " + message);
 		if(_callbackFail != null)
 			_callbackFail(message);
 	}
 	
 	function onEventsRequestStatus(status:Int):Void
 	{
-		trace("status: " + status);
+		_waitingForResponse = false;
+		if (status == 200)
+		{
+			_storage.db.RemoveFirstNEvents(_amountEvents);
+		}else {
+			trace("Error status: " + status);
+		}
+		if (_callbackSuccess != null)
+			_callbackSuccess();
 	}
 	
 	function onInitSuccess(data:String):Void
 	{
+		_waitingForResponse = false;
 		var initResponse:InitResponse = Json.parse(data);
 		if (!initResponse.enabled)
 		{
@@ -264,6 +280,7 @@ class GameAnalytics
 	}
 	function onInitFail(msg:String):Void
 	{
+		_waitingForResponse = false;
 		var error:String = "Send init request fail: " + msg;
 		trace(error);
 		if(_callbackFail != null)
@@ -281,18 +298,43 @@ class GameAnalytics
 		updateClientTimestamp();
 		return Events.GetSessionEndEvent(_defaultValues, length);
 	}
+	/**
+	 * Create a new Business event (real money purchase), but do not send it yet
+	 * @param	itemType A category/folder for the item bought (ex.: GemPack)
+	 * @param	itemId Identifier for the item bought (ex.: gems_50)
+	 * @param	amount Amount of items bought
+	 * @param	currency Three letter uppercase representation of REAL currency spent
+	 * @return BusinessEvent, can be further customized
+	 */
 	public function CreateBusinessEvent(itemType:String, itemId:String, amount:Int, currency:String):BusinessEvent
 	{
 		updateClientTimestamp();
 		_storage.NewTransaction();
 		return Events.GetBusinessEvent(_defaultValues, itemType+":" + itemId, amount, currency, _storage.transactionNum);
 	}
+	/**
+	 * Create a new Resource event (for tracking the flow of virtual currency), but do not send it yet
+	 * @param	flowType Use FlowType.[SINK|SOURCE], where Sink means spending virtual currency on something
+	 * @param	virtualCurrency The type of resource spent/gained
+	 * @param	itemType A category/folder of where the resource was spent/gained
+	 * @param	itemId Identificator of where the resource was spent/gained
+	 * @param	amount Amount of resource spent/gained
+	 * @return ResourceEvent, can be further customized
+	 */
 	public function CreateResourceEvent(flowType:String, virtualCurrency:String, itemType:String, itemId:String, amount:Float):ResourceEvent
 	{
 		updateClientTimestamp();
 		return Events.GetResourceEvent(_defaultValues, [flowType, virtualCurrency, itemType, itemId].join(":"), amount);
 	}
-	public function CreateProgressionEvent(progressionStatus:String, progression1:String, progression2:String, progression3:String):ProgressionEvent
+	/**
+	 * Create a new Progression event (for tracking user attempts at completing levels), but do not send it yet
+	 * @param	progressionStatus Status of progression, use ProgressionStatus.[START|FAIL|COMPLETE]
+	 * @param	progression1 Part of event id (ex.:levelset_0)
+	 * @param	progression2 Second part of event id (ex.:PirateIsland), optional
+	 * @param	progression3 Third part of event id (ex.:SandyHills), optional
+	 * @return ProgressionEvent, can be further customized
+	 */
+	public function CreateProgressionEvent(progressionStatus:String, progression1:String, progression2:String=null, progression3:String=null):ProgressionEvent
 	{
 		updateClientTimestamp();
 		var event_id:String = progression1;
@@ -305,6 +347,16 @@ class GameAnalytics
 		}
 		return event;
 	}
+	/**
+	 * Create a new custom Design event, but do not send it yet
+	 * @param	part1 First part of event id
+	 * @param	part2 Optional part of event id
+	 * @param	part3 Optional part of event id
+	 * @param	part4 Optional part of event id
+	 * @param	part5 Optional part of event id
+	 * @param	value Optional value parameter, null by default
+	 * @return DesignEvent, can be further customized
+	 */
 	public function CreateDesignEvent(part1:String, part2:String=null, part3:String=null, part4:String=null, part5:String=null, value:Null<Float> = null):DesignEvent
 	{
 		updateClientTimestamp();
@@ -317,6 +369,12 @@ class GameAnalytics
 		if (value != null) event.value = value;
 		return event;
 	}
+	/**
+	 * Create a new Error event, but do not send it yet
+	 * @param	severity Use ErrorSeverity.[DEBUG|INFO|WARNING|ERROR|CRITICAL]
+	 * @param	message Error message
+	 * @return ErrorEvent, can be further customized
+	 */
 	public function CreateErrorEvent(severity:String, message:String):ErrorEvent
 	{
 		updateClientTimestamp();
@@ -334,26 +392,45 @@ class GameAnalytics
 	{
 		_defaultValues.client_ts = serverTimestamp;
 	}
+	/**
+	 * Send a BusinessEvent (see CreateBusinessEvent for more info)
+	 */
 	public function SendBusinessEvent(itemType:String, itemId:String, amount:Int, currency:String):Void
 	{
 		SendEvent(CreateBusinessEvent(itemType, itemId, amount, currency));
 	}
+	/**
+	 * Send a ResourceEvent (see CreateResourceEvent for more info)
+	 */
 	public function SendResourceEvent(flowType:String, virtualCurrency:String, itemType:String, itemId:String, amount:Float):Void
 	{
 		SendEvent(CreateResourceEvent(flowType, virtualCurrency, itemType, itemId, amount));
 	}
+	/**
+	 * Send a ProgressionEvent (see CreateProgressionEvent for more info)
+	 */
 	public function SendProgressionEvent(progressionStatus:String, progression1:String, progression2:String, progression3:String):Void
 	{
 		SendEvent(CreateProgressionEvent(progressionStatus, progression1, progression2, progression3));
 	}
+	/**
+	 * Send a DesignEvent (see CreateDesignEvent for more info)
+	 */
 	public function SendDesignEvent(part1:String, part2:String = null, part3:String = null, part4:String = null, part5:String = null, value:Null<Float> = null):Void
 	{
 		SendEvent(CreateDesignEvent(part1, part2, part3, part4, part5, value));
 	}
+	/**
+	 * Send an ErrorEvent (see CreateErrorEvent for more info)
+	 */
 	public function SendErrorEvent(severity:String, message:String):Void
 	{
 		SendEvent(CreateErrorEvent(severity, message));
 	}
+	/**
+	 * Send a premade event
+	 * @param	event
+	 */
 	public function SendEvent(event:Dynamic):Void
 	{
 		if (!_sessionPresent)
