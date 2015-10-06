@@ -19,7 +19,7 @@ class GameAnalytics
 	public static inline var EVENTS_THRESHOLD:Int = 50;
 	public static inline var BIG_EVENTS_THRESHOLD:Int = 10000;
 	public static inline var DEFAULT_TIMER:Int = 20000;
-	public static inline var MAX_MESSAGE_LENGTH:Int = 500000;
+	public static inline var MAX_MESSAGE_LENGTH:Int = 100000;
 	static inline var VERSION_NUMBER:Int = 2;
 	static inline var VERSION:String = "v2";
 	static inline var SDK_VERSION:String = "rest api v2";
@@ -90,7 +90,6 @@ class GameAnalytics
 		if (!_inited)
 		{
 			_storage.Init();
-			_storage.RemoveFirstNEvents(1000);
 		}
 		_defaultValues = {
 			device: device,
@@ -104,13 +103,13 @@ class GameAnalytics
 			session_num: _storage.sessionNum,
 			client_ts: 0
 		};
+		_callbackSuccess = onSuccess;
+		_callbackFail = onFail;
 		if (_inited)
 		{
 			trace("Game Analytics already inited, not sending init request");
 			return;
 		}
-		_callbackSuccess = onSuccess;
-		_callbackFail = onFail;
 		var initRequest:InitRequest = { platform: platform, os_version: osVersion, sdk_version: SDK_VERSION };
 		var request:Http = _requestFactory.MakeRequest(_urlFactory.BuildUrl(ACTION_INIT), Json.stringify(initRequest));
 		request.onError = onInitFail;
@@ -197,13 +196,6 @@ class GameAnalytics
 		_sessionPresent = false;
 	}
 	
-	function antiSpam(reason:String):Void
-	function antiSpam(reason:String):Void
-	{
-		inited = false;
-		trace("Spam detected, reason: " + reason);
-	}
-	
 	function doPostEvents():Void
 	{
 		var numEvents:Int = _storage.GetNumEvents();
@@ -243,22 +235,22 @@ class GameAnalytics
 	
 	function onEventsRequestError(message:String):Void
 	{
-		trace("Error when sending request: " + message);
-		if(_callbackFail != null)
-			_callbackFail(message);
+		if(OnSubmitFail != null)
+			OnSubmitFail(message);
 	}
 	
 	function onEventsRequestStatus(status:Int):Void
 	{
 		_waitingForResponse = false;
+		_storage.RemoveFirstNEvents(_amountEvents);
 		if (status == 200)
 		{
-			_storage.RemoveFirstNEvents(_amountEvents);
+			if (OnSubmitSuccess != null)
+				OnSubmitSuccess();
 		}else {
-			trace("Error status: " + status);
+			if (OnSubmitFail != null)
+				OnSubmitFail("Error status: " + Std.string(status));
 		}
-		if (_callbackSuccess != null)
-			_callbackSuccess();
 	}
 	
 	function onInitSuccess(data:String):Void
@@ -445,6 +437,16 @@ class GameAnalytics
 			if (_amountErrors >= MAX_ERRORS) return;
 		}
 		_storage.SendEvent(Json.stringify(event));
+	}
+	
+	public dynamic function OnSubmitSuccess():Void
+	{
+		
+	}
+	
+	public dynamic function OnSubmitFail(reason:String):Void
+	{
+		
 	}
 	
 	/* Properties accessors */
