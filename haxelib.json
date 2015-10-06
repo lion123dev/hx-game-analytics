@@ -1,7 +1,7 @@
 {
 	"name": "gameanalytics",
 	"url": "https://github.com/lion123dev/hx-game-analytics",
-	"license": "GPL v2",
+	"license": "GPL",
 	"tags": ["analytics"],
 	"description": "Haxe SDK for http://www.gameanalytics.com",
 	"version": "0.1.1",
