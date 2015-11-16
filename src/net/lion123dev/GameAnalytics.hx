@@ -179,6 +179,7 @@ class GameAnalytics
 		_sessionStartTime = Date.now().getTime();
 		_storage.NewSession();
 		_defaultValues.session_id = _storage.sessionId;
+		_defaultValues.session_num = _storage.sessionNum;
 		SendSessionStartEvent();
 	}
 	
@@ -231,6 +232,7 @@ class GameAnalytics
 	
 	function onEventsRequestData(data:String):Void
 	{
+		
 	}
 	
 	function onEventsRequestError(message:String):Void

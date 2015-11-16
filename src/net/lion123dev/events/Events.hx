@@ -167,3 +167,16 @@ class ProgressionStatus
 	public static inline var FAIL:String = "Fail";
 	public static inline var COMPLETE:String = "Complete";
 }
+class GAPlatform
+{
+	public static inline var IOS:String = "ios";
+	public static inline var ANDROID:String = "android";
+	public static inline var WINDOWS:String = "windows";
+	public static inline var WINDOWS_PHONE:String = "windows_phone";
+	public static inline var BLACKBERRY:String = "blackberry";
+	public static inline var ROKU:String = "roku";
+	public static inline var TIZEN:String = "tizen";
+	public static inline var NACL:String = "nacl";
+	public static inline var MAC_OSX:String = "mac_osx";
+	public static inline var WEBPLAYER:String = "webplayer";
+}

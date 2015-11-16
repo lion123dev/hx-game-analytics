@@ -1,7 +1,6 @@
 package net.lion123dev.data;
 import net.lion123dev.data.db.DBadapter;
 import net.lion123dev.data.db.SharedObjectAdapter;
-import net.lion123dev.data.db.SQliteAdapter;
 
 /**
  * ...
@@ -29,10 +28,6 @@ class DataStorageManager
 		_uniqueKey = uniqueKey;
 		#if flash
 		_db = new SharedObjectAdapter(_uniqueKey);
-		#elseif neko
-		_db = new SQliteAdapter();
-		#elseif cpp
-		_db = new SQliteAdapter();
 		#else
 		_db = new DBadapter();
 		#end
