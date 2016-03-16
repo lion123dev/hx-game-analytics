@@ -4,7 +4,7 @@
 	"license": "GPL",
 	"tags": ["analytics"],
 	"description": "Haxe SDK for http://www.gameanalytics.com",
-	"version": "0.1.2",
-	"releasenote": "Fixed session counter",
+	"version": "0.1.4",
+	"releasenote": "Changed package",
 	"contributors": ["lion123dev"]
 }
