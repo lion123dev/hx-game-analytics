@@ -1,4 +1,4 @@
-package src.net.lion123dev;
+package net.lion123dev;
 import haxe.crypto.Hmac;
 import haxe.Http;
 import haxe.Json;
@@ -6,8 +6,8 @@ import haxe.Timer;
 import net.lion123dev.data.DataStorageManager;
 import net.lion123dev.events.Events;
 import net.lion123dev.events.Events.BaseEvent;
-import src.net.lion123dev.url.RequestFactory;
-import src.net.lion123dev.url.URLFactory;
+import net.lion123dev.url.RequestFactory;
+import net.lion123dev.url.URLFactory;
 
 /**
  * ...

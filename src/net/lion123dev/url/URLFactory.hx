@@ -1,4 +1,4 @@
-package src.net.lion123dev.url;
+package net.lion123dev.url;
 
 /**
  * ...

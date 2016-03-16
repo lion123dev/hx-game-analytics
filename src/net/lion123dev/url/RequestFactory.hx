@@ -1,4 +1,4 @@
-package src.net.lion123dev.url;
+package net.lion123dev.url;
 import haxe.crypto.Base64;
 import haxe.crypto.BaseCode;
 import haxe.crypto.Hmac;
