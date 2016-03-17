@@ -3,6 +3,7 @@ import haxe.crypto.Hmac;
 import haxe.Http;
 import haxe.Json;
 import haxe.Timer;
+import haxe.ds.StringMap;
 import net.lion123dev.data.DataStorageManager;
 import net.lion123dev.events.Events;
 import net.lion123dev.events.Events.BaseEvent;
@@ -85,7 +86,7 @@ class GameAnalytics
 	 * @param	onSuccess Function to be called when requests succeed.
 	 * @param	onFail Function to be called when requests fail, with the reason message.
 	 */
-	public function Init(onSuccess:Void->Void, onFail:String->Void, platform:String, osVersion:String, device:String, manufacturer:String):Void
+	public function Init(onSuccess:Void->Void, onFail:String->Void, platform:String, osVersion:String, device:String, manufacturer:String, customValues:StringMap<Dynamic>=null):Void
 	{
 		if (!_inited)
 		{
@@ -103,6 +104,14 @@ class GameAnalytics
 			session_num: _storage.sessionNum,
 			client_ts: 0
 		};
+		if (customValues != null)
+		{
+			var keys:Iterator<String> = customValues.keys();
+			for (s in keys)
+			{
+				Reflect.setField(_defaultValues, s, customValues.get(s));
+			}
+		}
 		_callbackSuccess = onSuccess;
 		_callbackFail = onFail;
 		if (_inited)

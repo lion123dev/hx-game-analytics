@@ -4,7 +4,7 @@
 	"license": "GPL",
 	"tags": ["analytics"],
 	"description": "Haxe SDK for http://www.gameanalytics.com",
-	"version": "0.1.4",
-	"releasenote": "Changed package",
+	"version": "0.1.5",
+	"releasenote": "Added an option to pass default values before Init",
 	"contributors": ["lion123dev"]
 }
