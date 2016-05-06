@@ -202,7 +202,7 @@ class GameAnalytics
 			trace("No current session availbale");
 			return;
 		}
-		SendSessionEndEvent(Math.ceil((_sessionStartTime-Date.now().getTime()) / 1000));
+		SendSessionEndEvent(Math.ceil((Date.now().getTime() - _sessionStartTime) / 1000));
 		_sessionPresent = false;
 	}
 	
