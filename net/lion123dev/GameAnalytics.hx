@@ -367,7 +367,7 @@ class GameAnalytics
 		var event_id:String = part1;
 		for (s in [part2, part3, part4, part5])
 		{
-			if (s != null) event_id += s;
+			if (s != null) event_id += (":" + s);
 		}
 		var event:DesignEvent = Events.GetDesignEvent(_defaultValues, event_id);
 		if (value != null) event.value = value;
