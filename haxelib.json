@@ -6,5 +6,8 @@
 	"description": "Haxe SDK for http://www.gameanalytics.com",
 	"version": "0.1.5",
 	"releasenote": "Added an option to pass default values before Init",
+	"dependencies": {
+	  "openfl": ""
+	}
 	"contributors": ["lion123dev"]
 }

@@ -1,2 +1,4 @@
 bin
 *.hxproj
+net/lion123dev/Main.hx
+project.xml

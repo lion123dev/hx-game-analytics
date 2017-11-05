@@ -26,11 +26,8 @@ class DataStorageManager
 	public function new(uniqueKey:String)
 	{
 		_uniqueKey = uniqueKey;
-		#if flash
+		
 		_db = new SharedObjectAdapter(_uniqueKey);
-		#else
-		_db = new DBadapter();
-		#end
 	}
 	
 	/**

@@ -1,15 +1,13 @@
 package net.lion123dev.data.db;
+import openfl.net.SharedObject;
 
 /**
  * ...
  * @author _lion123
  */
-#if flash
-import flash.net.SharedObject;
-#end
+
 class SharedObjectAdapter extends DBadapter
 {
-	#if flash
 	var _sharedObject:SharedObject;
 	public function new(uniqueKey:String) 
 	{
@@ -80,5 +78,4 @@ class SharedObjectAdapter extends DBadapter
 		Reflect.setField(_sharedObject.data.progression, progressionEventId, attemptNum);
 		_sharedObject.flush();
 	}
-	#end
 }
