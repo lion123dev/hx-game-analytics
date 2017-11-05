@@ -1,8 +1,13 @@
-# Haxe game analytics
+# This library now uses OpenFL
+For the longest time I tried to find a good cross-platform solution to save user Id, amount of sessions and other data.
+Today I decided to go the easiest route and just stick a dependency on OpenFL. Let's see how it goes :)
+
+# Haxe/OpenFL game analytics
 How to install: `haxelib install gameanalytics`
+Dependency: openfl http://www.openfl.org
 
 Here's a quick code snippet, explaining how to use the library:
-(For more info see documentation in code)
+(For more info see documentation in code or use autocompletion)
 
 ## Initialization:
 ```haxe
