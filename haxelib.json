@@ -3,11 +3,11 @@
 	"url": "https://github.com/lion123dev/hx-game-analytics",
 	"license": "GPL",
 	"tags": ["analytics"],
-	"description": "Haxe SDK for http://www.gameanalytics.com",
-	"version": "0.1.5",
-	"releasenote": "Added an option to pass default values before Init",
+	"description": "Haxe/OpenFL SDK for http://www.gameanalytics.com",
+	"version": "0.2.0",
+	"releasenote": "Moved to OpenFL for saving",
 	"dependencies": {
 	  "openfl": ""
-	}
+	},
 	"contributors": ["lion123dev"]
 }
