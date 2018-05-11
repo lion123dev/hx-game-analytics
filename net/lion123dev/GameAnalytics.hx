@@ -199,7 +199,7 @@ class GameAnalytics
 	{
 		if (!_sessionPresent)
 		{
-			trace("No current session availbale");
+			trace("No current session available");
 			return;
 		}
 		SendSessionEndEvent(Math.ceil((Date.now().getTime() - _sessionStartTime) / 1000));
@@ -336,9 +336,10 @@ class GameAnalytics
 	 * @param	progression1 Part of event id (ex.:levelset_0)
 	 * @param	progression2 Second part of event id (ex.:PirateIsland), optional
 	 * @param	progression3 Third part of event id (ex.:SandyHills), optional
+	 * @param	score An optional player score for attempt. Only sent when Status is "Fail" or "Complete", optional
 	 * @return ProgressionEvent, can be further customized
 	 */
-	public function CreateProgressionEvent(progressionStatus:String, progression1:String, progression2:String=null, progression3:String=null):ProgressionEvent
+	public function CreateProgressionEvent(progressionStatus:String, progression1:String, progression2:String=null, progression3:String=null, score:Null<Int> = null):ProgressionEvent
 	{
 		updateClientTimestamp();
 		var event_id:String = progression1;
@@ -348,6 +349,10 @@ class GameAnalytics
 		if (progressionStatus == ProgressionStatus.COMPLETE || progressionStatus == ProgressionStatus.FAIL)
 		{
 			event.attempt_num = _storage.NewAttempt(event_id);
+			if (score != null)
+			{
+				event.score = score;
+			}
 		}
 		return event;
 	}
@@ -413,9 +418,9 @@ class GameAnalytics
 	/**
 	 * Send a ProgressionEvent (see CreateProgressionEvent for more info)
 	 */
-	public function SendProgressionEvent(progressionStatus:String, progression1:String, progression2:String, progression3:String):Void
+	public function SendProgressionEvent(progressionStatus:String, progression1:String, progression2:String, progression3:String, score:Null<Int> = null):Void
 	{
-		SendEvent(CreateProgressionEvent(progressionStatus, progression1, progression2, progression3));
+		SendEvent(CreateProgressionEvent(progressionStatus, progression1, progression2, progression3, score));
 	}
 	/**
 	 * Send a DesignEvent (see CreateDesignEvent for more info)
