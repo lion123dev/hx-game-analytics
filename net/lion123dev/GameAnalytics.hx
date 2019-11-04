@@ -418,7 +418,7 @@ class GameAnalytics
 	/**
 	 * Send a ProgressionEvent (see CreateProgressionEvent for more info)
 	 */
-	public function SendProgressionEvent(progressionStatus:String, progression1:String, progression2:String, progression3:String, score:Null<Int> = null):Void
+	public function SendProgressionEvent(progressionStatus:String, progression1:String = null, progression2:String = null, progression3:String = null, score:Null<Int> = null):Void
 	{
 		SendEvent(CreateProgressionEvent(progressionStatus, progression1, progression2, progression3, score));
 	}
