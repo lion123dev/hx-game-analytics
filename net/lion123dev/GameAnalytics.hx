@@ -24,7 +24,7 @@ class GameAnalytics
 	static inline var VERSION_NUMBER:Int = 2;
 	static inline var VERSION:String = "v2";
 	static inline var SDK_VERSION:String = "rest api v2";
-	static inline var PROTOCOL:String = "http://";
+	static inline var PROTOCOL:String = "https://";
 	
 	static inline var PRODUCTION:String = "api.gameanalytics.com";
 	static inline var SANDBOX:String = "sandbox-api.gameanalytics.com";
