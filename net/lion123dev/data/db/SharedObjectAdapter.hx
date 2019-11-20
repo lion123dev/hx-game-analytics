@@ -75,6 +75,7 @@ class SharedObjectAdapter extends DBadapter
 	//Progression
 	override public function UpdateAttemptNum(progressionEventId:String, attemptNum:Int):Void 
 	{
+		super.UpdateAttemptNum(progressionEventId, attemptNum);
 		Reflect.setField(_sharedObject.data.progression, progressionEventId, attemptNum);
 		_sharedObject.flush();
 	}
